@@ -12,6 +12,7 @@ fn main() {
     println!("  deposit <name> <amount>   - пополнить баланс");
     println!("  withdraw <name> <amount>  - снять со счёта");
     println!("  balance <name>            - показать баланс");
+    println!("  list                      - показать всех пользоватлей и их балансы");
     println!("  exit                      - выйти");
 
     let stdin = io::stdin();
@@ -112,6 +113,13 @@ fn main() {
                     Some(b) => println!("Баланс '{}': {}", name, b),
                     None => println!("Пользователь '{}' не найден", name),
                 }
+            }
+            "list" => {
+                let mut all = storage.get_all();
+                all.sort_by(|a, b| a.0.cmp(&b.0)); // сортируем по имени
+                for (name, balance) in all {
+                    println!("  {} : {}", name, balance);
+                } 
             }
             "exit" => break,
             _ => println!("Неизвестная команда: '{}'", args[0]),
