@@ -82,13 +82,13 @@ pub struct Withdraw {
 
 impl Transaction for Withdraw {
     fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
-        let from_balance = storage
+        let balance = storage
             .accounts
             .get(&self.account)
             .ok_or(TxError::InvalidAccount)?
             .balance;
 
-        if from_balance < self.amount {
+        if balance < self.amount {
             return Err(TxError::InsufficientFunds);
         }
         storage.accounts.get_mut(&self.account).unwrap().balance -= self.amount;
