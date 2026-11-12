@@ -72,3 +72,27 @@ impl Transaction for Transfer {
         Ok(())
     }
 }
+
+// transaction.rs
+#[derive(Debug)]
+pub struct Withdraw {
+    pub account: String,
+    pub amount: i64,
+}
+
+impl Transaction for Withdraw {
+    fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
+        let from_balance = storage
+            .accounts
+            .get(&self.account)
+            .ok_or(TxError::InvalidAccount)?
+            .balance;
+
+        if from_balance < self.amount {
+            return Err(TxError::InsufficientFunds);
+        }
+        storage.accounts.get_mut(&self.account).unwrap().balance -= self.amount;
+        Ok(())
+    }
+
+}

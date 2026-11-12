@@ -1,5 +1,5 @@
 use bank_system::{Name, Storage};
-use bank_system::transaction::{Deposit, Transaction, Transfer};
+use bank_system::transaction::{Deposit, Transaction, Transfer, Withdraw};
 use std::io::{self, BufRead, Write};
 
 fn main() {
@@ -8,13 +8,14 @@ fn main() {
 
     println!("=== Bank CLI Utils ===");
     println!("Команды:");
-    println!("  add <name> <balance>      - добавить пользователя");
-    println!("  remove <name>             - удалить пользователя");
-    println!("  deposit <name> <amount>   - пополнить баланс");
-    println!("  withdraw <name> <amount>  - снять со счёта");
-    println!("  balance <name>            - показать баланс");
-    println!("  list                      - показать всех пользоватлей и их балансы");
-    println!("  exit                      - выйти");
+    println!("  add <name> <balance>            - добавить пользователя");
+    println!("  remove <name>                   - удалить пользователя");
+    println!("  deposit <name> <amount>         - пополнить баланс");
+    println!("  wd <name> <amount>              - снять со счёта");
+    println!("  balance <name>                  - показать баланс");
+    println!("  transfer <name> <name> <amount> - перевести средства");
+    println!("  list                            - показать всех пользоватлей и их балансы");
+    println!("  exit                            - выйти");
 
     let stdin = io::stdin();
     let mut stdout = io::stdout();
@@ -124,7 +125,7 @@ fn main() {
                     Err(e) => println!("Ошибка транзакции: {:?}", e),
                 }
             } 
-            "withdraw" => {
+            "wd" => {
                 if args.len() != 3 {
                     println!("Пример: withdraw John 100");
                     continue;
@@ -134,12 +135,17 @@ fn main() {
                     Ok(a) => a,
                     Err(_) => { println!("Сумма должна быть целым числом"); continue; }
                 };
-                match storage.withdraw(&name, amount) {
-                    Ok(bal) => {
-                        println!("С баланса '{}' снято {}. Итого: {}", name, amount, bal);
+                let tx = Withdraw {
+                    account: name.clone(),
+                    amount,
+                };
+                // Применяем транзакцию 
+                match tx.apply(&mut storage) {
+                    Ok(_) => {
+                        println!("Транзакция: списание {} на {}", name, amount);
                         storage.save("balance.csv");
                     }
-                    Err(e) => println!("Ошибка: {}", e),
+                    Err(e) => println!("Ошибка транзакции: {:?}", e),
                 }
             }
             "balance" => {
