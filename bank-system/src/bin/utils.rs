@@ -1,4 +1,5 @@
 use bank_system::{Name, Storage};
+use bank_system::transaction::{Deposit, Transaction, Transfer};
 use std::io::{self, BufRead, Write};
 
 fn main() {
@@ -67,6 +68,35 @@ fn main() {
                     None => println!("Пользователь '{}' не найден", name),
                 }
             }
+            "transfer" => {
+                if args.len() != 4 {
+                    println!("Пример: transfer Alice Bob 50");
+                    continue;
+                }
+                let from = args[1].to_string();
+                let to = args[2].to_string();
+                let amount: i64 = match args[3].parse() {
+                    Ok(a) => a,
+                    Err(_) => {
+                        println!("Сумма должна быть числом");
+                        continue;
+                    }
+                };
+                let tr = Transfer {
+                    from: from.clone(),
+                    to: to.clone(),
+                    amount: amount,
+                };
+                // Применяем транзакцию 
+                match tr.apply(&mut storage) {
+                    Ok(_) => {
+                        println!("Транзакция: перевод {} -> {} на {}", from, to, amount);
+                        storage.save("balance.csv");
+                    }
+                    Err(e) => println!("Ошибка транзакции: {:?}", e),
+                }
+                // Ваш код здесь 
+            }
             "deposit" => {
                 if args.len() != 3 {
                     println!("Пример: deposit John 100");
@@ -75,16 +105,25 @@ fn main() {
                 let name = args[1].to_string();
                 let amount: i64 = match args[2].parse() {
                     Ok(a) => a,
-                    Err(_) => { println!("Сумма должна быть целым числом"); continue; }
+                    Err(_) => {
+                        println!("Сумма должна быть числом");
+                        continue;
+                    }
                 };
-                match storage.deposit(&name, amount) {
-                    Ok(bal) => {
-                        println!("Баланс '{}' увеличен на {}. Итого: {}", name, amount, bal);
+
+                let tx = Deposit {
+                    account: name.clone(),
+                    amount,
+                };
+                // Применяем транзакцию 
+                match tx.apply(&mut storage) {
+                    Ok(_) => {
+                        println!("Транзакция: депозит {} на {}", name, amount);
                         storage.save("balance.csv");
                     }
-                    Err(e) => println!("Ошибка: {}", e),
+                    Err(e) => println!("Ошибка транзакции: {:?}", e),
                 }
-            }
+            } 
             "withdraw" => {
                 if args.len() != 3 {
                     println!("Пример: withdraw John 100");

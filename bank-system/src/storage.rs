@@ -18,7 +18,7 @@ impl Account {
 }
 
 pub struct Storage {
-    accounts: HashMap<Name, Account>,
+    pub accounts: HashMap<Name, Account>,
 }
 
 impl Storage {
