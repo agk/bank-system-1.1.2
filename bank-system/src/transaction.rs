@@ -144,3 +144,12 @@ macro_rules! tx_chain {
         tx
     }};
 }
+
+#[macro_export]
+macro_rules! create_users {
+    ($storage:expr, $( $name:expr ),+ $(,)?) => {
+        $(
+            $storage.add_user($name.to_string());
+        )+
+    };
+}
