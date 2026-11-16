@@ -1,0 +1,14 @@
+# bank-system/my_macros/Cargo.toml
+
+[package]
+name = "my_macros"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+proc-macro = true   # ← вот эта строка делает крейт крейтом с процедурными макросами
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }

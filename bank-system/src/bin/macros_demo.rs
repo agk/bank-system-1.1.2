@@ -4,6 +4,7 @@ use bank_system::tx_chain;
 use bank_system::create_users;
 use bank_system::Storage;
 use bank_system::{Deposit, Transaction, Transfer, Withdraw};
+use my_macros::say_hello;
 
 fn main() {
     let mut storage = Storage::new();
@@ -25,6 +26,10 @@ fn main() {
     for (name, balance) in storage.get_all() {
         println!("{} -> {}", name, balance);
     }
+
+    say_hello!("Привет из процедурного макроса!");
+    // разворачивается в: println!("{}", "Привет из процедурного макроса!");
+
 }
 
 // cargo expand --bin macros_demo
