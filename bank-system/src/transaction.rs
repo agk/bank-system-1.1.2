@@ -96,3 +96,51 @@ impl Transaction for Withdraw {
     }
 
 }
+
+
+#[derive(Debug)]
+pub struct TxCombinator<A, B> {
+    pub t1: A,
+    pub t2: B,
+}
+
+impl<A, B> TxCombinator<A, B> {
+    pub fn new(t1: A, t2: B) -> Self {
+        TxCombinator { t1, t2 }
+    }
+}
+
+#[macro_export]
+macro_rules! impl_add {
+    ( $( ($lhs:ty, $rhs:ty) ),* $(,)? ) => {
+        $(
+            impl std::ops::Add<$rhs> for $lhs {
+                type Output = $crate::TxCombinator<$lhs, $rhs>;
+
+                fn add(self, rhs: $rhs) -> Self::Output {
+                    $crate::TxCombinator { t1: self, t2: rhs }
+                }
+            }
+        )*
+    };
+}
+// transaction.rs
+// use crate::impl_add;
+
+impl_add! {
+    (Deposit, Transfer),
+    (Transfer, Deposit),
+    (Deposit, Deposit),
+    (Transfer, Transfer),
+}
+
+#[macro_export]
+macro_rules! tx_chain {
+    ( $first:expr $(, $rest:expr )* $(,)? ) => {{
+        let tx = $first;
+        $(
+            let tx = $crate::TxCombinator { t1: tx, t2: $rest };
+        )*
+        tx
+    }};
+}
