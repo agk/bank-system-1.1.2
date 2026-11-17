@@ -10,6 +10,12 @@ pub trait Transaction {
     fn apply(&self, accounts: &mut Storage) -> Result<(), TxError>;
 }
 
+trait Describable {
+    fn describe(&self) -> String;
+}
+
+// Deposit — тип по умолчанию, атрибут не нужен
+#[derive(Transaction)]
 pub struct Deposit {
     pub account: String,
     pub amount: i64,
@@ -34,11 +40,13 @@ impl Transaction for Deposit {
     }
 }
 
+#[derive(Transaction)]
+#[transaction("transfer")]
 pub struct Transfer {
     pub from: String,
     pub to: String,
     pub amount: i64,
-}
+} 
 
 // impl Transaction for Transfer {
 //     fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
@@ -73,8 +81,8 @@ impl Transaction for Transfer {
     }
 }
 
-// transaction.rs
-#[derive(Debug)]
+#[derive(Transaction)]
+#[transaction("withdraw")]
 pub struct Withdraw {
     pub account: String,
     pub amount: i64,
@@ -97,6 +105,12 @@ impl Transaction for Withdraw {
 
 }
 
+impl<A: Transaction, B: Transaction> Transaction for TxCombinator<A, B> {
+    fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
+        self.t1.apply(storage)?;   // сначала левая транзакция
+        self.t2.apply(storage)     // потом правая
+    }
+}
 
 #[derive(Debug)]
 pub struct TxCombinator<A, B> {
