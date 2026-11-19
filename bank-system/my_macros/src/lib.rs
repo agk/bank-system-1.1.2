@@ -108,31 +108,45 @@ pub fn transaction_derive(input: TokenStream) -> TokenStream {
     // Генерируем тело apply в зависимости от kind
     let body = match kind {
         "deposit" => quote! {
-            *storage.accounts.entry(self.account.clone()).or_insert(0) += self.amount;
+            match storage.accounts.get_mut(&self.account) {
+                Some(acc) => {
+                    acc.balance += self.amount;
+                    Ok(())
+                }
+                None => Err(TxError::InvalidAccount),
+            }
         },
         "withdraw" => quote! {
-            let bal = storage.accounts.entry(self.account.clone()).or_insert(0);
-            if *bal < self.amount {
+            let balance = storage.accounts.get(&self.account)
+                .ok_or(TxError::InvalidAccount)?
+                .balance;
+            if balance < self.amount {
                 return Err(TxError::InsufficientFunds);
             }
-            *bal -= self.amount;
+            storage.accounts.get_mut(&self.account).unwrap().balance -= self.amount;
+            Ok(())
         },
         "transfer" => quote! {
-            let from_bal = storage.accounts.entry(self.from.clone()).or_insert(0);
-            if *from_bal < self.amount {
+            let from_balance = storage.accounts.get(&self.from)
+                .ok_or(TxError::InvalidAccount)?
+                .balance;
+            if from_balance < self.amount {
                 return Err(TxError::InsufficientFunds);
             }
-            *from_bal -= self.amount;
-            *storage.accounts.entry(self.to.clone()).or_insert(0) += self.amount;
+            if !storage.accounts.contains_key(&self.to) {
+                return Err(TxError::InvalidAccount);
+            }
+            storage.accounts.get_mut(&self.from).unwrap().balance -= self.amount;
+            storage.accounts.get_mut(&self.to).unwrap().balance += self.amount;
+            Ok(())
         },
-        _ => panic!("Неизвестный тип транзакции: {}", kind),
+        _ => quote! { compile_error!("unknown transaction kind") },
     };
 
     let expanded = quote! {
         impl Transaction for #name {
             fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
                 #body
-                Ok(())
             }
         }
     };

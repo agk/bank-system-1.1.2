@@ -1,4 +1,5 @@
 use crate::storage::Storage;
+use my_macros::Transaction; 
 
 #[derive(Debug)]
 pub enum TxError {
@@ -10,9 +11,9 @@ pub trait Transaction {
     fn apply(&self, accounts: &mut Storage) -> Result<(), TxError>;
 }
 
-trait Describable {
-    fn describe(&self) -> String;
-}
+// trait Describable {
+//     fn describe(&self) -> String;
+// }
 
 // Deposit — тип по умолчанию, атрибут не нужен
 #[derive(Transaction)]
@@ -28,17 +29,17 @@ pub struct Deposit {
 //     }
 // }
 
-impl Transaction for Deposit {
-    fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
-        match storage.accounts.get_mut(&self.account) {
-            Some(acc) => {
-                acc.balance += self.amount;   // ← меняем ПОЛЕ balance
-                Ok(())
-            }
-            None => Err(TxError::InvalidAccount),
-        }
-    }
-}
+// impl Transaction for Deposit {
+//     fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
+//         match storage.accounts.get_mut(&self.account) {
+//             Some(acc) => {
+//                 acc.balance += self.amount;   // ← меняем ПОЛЕ balance
+//                 Ok(())
+//             }
+//             None => Err(TxError::InvalidAccount),
+//         }
+//     }
+// }
 
 #[derive(Transaction)]
 #[transaction("transfer")]
@@ -59,27 +60,27 @@ pub struct Transfer {
 //         Ok(())
 //     }
 // }
-impl Transaction for Transfer {
-    fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
-        let from_balance = storage
-            .accounts
-            .get(&self.from)
-            .ok_or(TxError::InvalidAccount)?
-            .balance;
+// impl Transaction for Transfer {
+//     fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
+//         let from_balance = storage
+//             .accounts
+//             .get(&self.from)
+//             .ok_or(TxError::InvalidAccount)?
+//             .balance;
 
-        if from_balance < self.amount {
-            return Err(TxError::InsufficientFunds);
-        }
+//         if from_balance < self.amount {
+//             return Err(TxError::InsufficientFunds);
+//         }
 
-        if !storage.accounts.contains_key(&self.to) {
-            return Err(TxError::InvalidAccount);
-        }
+//         if !storage.accounts.contains_key(&self.to) {
+//             return Err(TxError::InvalidAccount);
+//         }
 
-        storage.accounts.get_mut(&self.from).unwrap().balance -= self.amount;
-        storage.accounts.get_mut(&self.to).unwrap().balance += self.amount;
-        Ok(())
-    }
-}
+//         storage.accounts.get_mut(&self.from).unwrap().balance -= self.amount;
+//         storage.accounts.get_mut(&self.to).unwrap().balance += self.amount;
+//         Ok(())
+//     }
+// }
 
 #[derive(Transaction)]
 #[transaction("withdraw")]
@@ -88,22 +89,22 @@ pub struct Withdraw {
     pub amount: i64,
 }
 
-impl Transaction for Withdraw {
-    fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
-        let balance = storage
-            .accounts
-            .get(&self.account)
-            .ok_or(TxError::InvalidAccount)?
-            .balance;
+// impl Transaction for Withdraw {
+//     fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
+//         let balance = storage
+//             .accounts
+//             .get(&self.account)
+//             .ok_or(TxError::InvalidAccount)?
+//             .balance;
 
-        if balance < self.amount {
-            return Err(TxError::InsufficientFunds);
-        }
-        storage.accounts.get_mut(&self.account).unwrap().balance -= self.amount;
-        Ok(())
-    }
+//         if balance < self.amount {
+//             return Err(TxError::InsufficientFunds);
+//         }
+//         storage.accounts.get_mut(&self.account).unwrap().balance -= self.amount;
+//         Ok(())
+//     }
 
-}
+// }
 
 impl<A: Transaction, B: Transaction> Transaction for TxCombinator<A, B> {
     fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
