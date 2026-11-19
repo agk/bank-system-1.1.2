@@ -1,9 +1,43 @@
 // my_macros/src/lib.rs
 use proc_macro::TokenStream;
+use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
+#[proc_macro_derive(ToSql)]
+pub fn to_sql_derive(input: TokenStream) -> TokenStream {
+    let input: DeriveInput = parse_macro_input!(input);
+    let name = &input.ident; // имя структуры, например User 
+    
+    let (field_names, field_values): (Vec<_>, Vec<_>) = match &input.data {
+        Data::Struct(data) => match &data.fields {
+            Fields::Named(fields) => fields.named.iter()
+                .map(|f| {
+                    let ident = f.ident.as_ref().unwrap();
+                    (ident, quote! { self.#ident })
+                    // field_names получит имя поля,
+                    // field_values получит выражение self.имя
+                })
+                .unzip(),
+            _ => panic!("ToSql работает только со структурами с именованными полями"),
+        },
+        _ => panic!("ToSql работает только со структурами"),
+    };
+    
+    let expanded: TokenStream2 = quote! {
+        impl #name {
+            pub fn to_sql(&self, table: &str) -> String {
+                // stringify! превращает идентификатор в строку на этапе компиляции
+                let columns = vec![#(stringify!(#field_names)),*].join(", ");
+                // format! формирует строковое значение каждого поля
+                let values = vec![#(format!("'{}'", #field_values)),*].join(", ");
+                format!("INSERT INTO {} ({}) VALUES ({});", table, columns, values)
+            }
+        }
+    };
 
+    TokenStream::from(expanded)
+}
 #[proc_macro]
 pub fn say_hello(input: TokenStream) -> TokenStream {
     // Ожидаем строковый литерал
