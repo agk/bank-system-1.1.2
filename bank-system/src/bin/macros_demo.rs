@@ -3,10 +3,10 @@ use bank_system::tx_chain;
 use bank_system::create_users;
 use bank_system::Storage;
 use bank_system::{Deposit, Transaction, Transfer, Withdraw};
-use my_macros::say_hello;
-use my_macros::ToSql;
+use my_macros::{say_hello, ToSql, FromSql};
 
-#[derive(Debug, ToSql)]
+
+#[derive(Debug, ToSql, FromSql)]
 struct User {
     id: i32,
     name: String,
@@ -40,6 +40,10 @@ fn main() {
     let user = User { id: 1, name: "Alice".into(), age: 30 };
     println!("{}", user.to_sql("users"));
     // → INSERT INTO users (id, name, age) VALUES ('1', 'Alice', '30');
+
+    let sql = "INSERT INTO users (id, name, age) VALUES('1','Alice','30');";
+    let user = User::from_sql(sql);
+    println!("{:?}", user); // → User { id: 1, name: "Alice", age: 30 }
 
 }
 

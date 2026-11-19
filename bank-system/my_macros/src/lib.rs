@@ -4,6 +4,48 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
+#[proc_macro_derive(FromSql)]
+pub fn from_sql_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = input.ident;
+
+    let fields: Vec<_> = if let syn::Data::Struct(data) = &input.data {
+        data.fields.iter()
+            .map(|f| f.ident.clone().unwrap())
+            .collect()
+    } else {
+        panic!("FromSql работает только со структурами");
+    };
+
+    let assigns = fields.iter().map(|f| {
+        quote! {
+            #f: vals.next().unwrap().parse().expect("Не удалось распарсить поле"),
+        }
+    });
+
+    let expanded = quote! {
+        impl #name {
+            pub fn from_sql(sql: &str) -> Self {
+                // Извлекаем значения из строки вида VALUES('a','b','c');
+                let mut vals = sql
+                    .split("VALUES(")
+                    .nth(1)
+                    .expect("Не найдено VALUES")
+                    .trim_end_matches(");")
+                    .split(',')
+                    .map(|s| s.trim().trim_matches('\''))
+                    .into_iter();
+
+                Self {
+                    #(#assigns)*
+                }
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
 #[proc_macro_derive(ToSql)]
 pub fn to_sql_derive(input: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(input);
