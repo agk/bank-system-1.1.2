@@ -16,27 +16,6 @@ pub fn say_hello(input: TokenStream) -> TokenStream {
     expanded.into()
 }
 
-
-// #[proc_macro_derive(Describable)]
-// pub fn derive_describable(input: TokenStream) -> TokenStream {
-//     // Шаг 1: разбираем входной TokenStream в удобную структуру
-//     let input = parse_macro_input!(input as DeriveInput);
-
-//     // Шаг 2: берём имя структуры
-//     let name = input.ident;
-
-//     // Шаг 3: генерируем реализацию
-//     let expanded = quote! {
-//         impl Describable for #name {
-//             fn describe(&self) -> String {
-//                 format!("Я — структура {}", stringify!(#name))
-//             }
-//         }
-//     };
-
-//     TokenStream::from(expanded)
-// }
-
 #[proc_macro_derive(Describable)]
 pub fn derive_describable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -63,25 +42,6 @@ pub fn derive_describable(input: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
-
-// #[proc_macro_derive(Transaction)]
-// pub fn derive_transaction(input: TokenStream) -> TokenStream {
-//     let input = parse_macro_input!(input as DeriveInput);
-//     let name = input.ident;
-
-//     let expanded = quote! {
-//         impl Transaction for #name {
-//             fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
-//                 *storage.accounts
-//                     .entry(self.account.clone())
-//                     .or_insert(0) += self.amount;
-//                 Ok(())
-//             }
-//         }
-//     };
-
-//     TokenStream::from(expanded)
-// }
 
 #[proc_macro_derive(Transaction, attributes(transaction))]
 pub fn transaction_derive(input: TokenStream) -> TokenStream {
